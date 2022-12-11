@@ -2,6 +2,8 @@
 #include <time.h>
 #include <unistd.h>
 #include <ncurses.h>
+#include <string.h>
+#include <ctype.h>
 
 // Main Fucntionals
 void menu(); 
@@ -18,7 +20,12 @@ void bye();
 void showInfo(); 
 
 // Structs
-typedef struct 
+typedef struct { 
+    char name[255]; 
+    int price; 
+    int quantity; 
+
+} Dish; 
 
 int main()
 {
@@ -81,8 +88,48 @@ void menu() {
     }
 }
 
-void addDish() {}
-void removeDish() {}
+void addDish() {
+    char name[255]; 
+    int price, qty;
+
+    int flag = 0;
+    do {
+        printf("Insert the name of the dish [Lowercase letters]: "); 
+        scanf("%s", name);
+
+        for (int i = 0; i < strlen(name); i++) {
+            if (isupper(name[i])) {
+                flag = 1; 
+                break; 
+            }
+        }
+    } while (flag);
+
+    int flag = 0;  
+    do {
+        printf("Insert the price of the dish [1000..50000]: "); 
+        scanf("%d", &price); 
+
+        if (price < 1000 || price > 50000) flag = 1; 
+    } while (flag);
+
+    int flag = 0;  
+    do {
+        printf("Insert the quantity of the dish [1..999]: "); 
+        scanf("%d", &qty); 
+
+        if (qty < 1 || qty > 999) flag = 1; 
+    } while (flag); 
+
+    /*add the new dish to the linked list*/
+    printf("The dish has been added!\n\n");
+    printf("Press enter to continue...\n");
+    getchar(); 
+}
+
+void removeDish() {
+    
+}
 void addCust() {}
 void searchCust() {} 
 void view() {}
