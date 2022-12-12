@@ -1,73 +1,99 @@
-#include <stdio.h>
+#include <ncurses.h>
 #include <stdlib.h>
 
-#define MAX_SIZE 100
+// define a node struct to represent each element in the linked list
+typedef struct Node {
+    int value; 
+    struct Node* next;
+} node; 
 
-// The priority queue data structure
-typedef struct priority_queue {
-  int data[MAX_SIZE];
-  int size;
-} priority_queue;
+// define head object to keep track of the head of the queue
+node* head = NULL; 
 
-// Initialize an empty priority queue
-void init(priority_queue *q) {
-  q->size = 0;
+// initialize a new node 
+node* node_new(int value) {
+    node* n = (node*) malloc(sizeof(node)); 
+    n->value = value; 
+    n->next = NULL; 
+    return n; 
 }
 
-// Check if the priority queue is empty
-int is_empty(priority_queue *q) {
-  return q->size == 0;
+// check if queue is empty
+int queue_is_empty() {
+    return head == NULL; 
 }
 
-// Insert an element into the priority queue
-void insert(priority_queue *q, int item) {
-  int i;
-  if (q->size == MAX_SIZE) {
-    printf("Error: priority queue is full!\n");
-    return;
-  }
+// add a new element to the queue
+void enqueue(int value) {
+    node* new = node_new(value); 
 
-  // Find the correct position for the new element
-  for (i = q->size; i > 0 && q->data[i-1] > item; i--) {
-    q->data[i] = q->data[i-1];
-  }
+    if (queue_is_empty()) head = new;
+    else if (head->value < value) {
+        new->next = head; 
+        head = new; 
+    }
+    else {
+        node* curr = head;
 
-  // Insert the new element
-  q->data[i] = item;
-  q->size++;
+        // find the correct position for the new node in the queue 
+        while (curr->next && curr->next->value > value) {
+            curr = curr->next; 
+        }
+
+        new->next = curr->next; 
+        curr->next = new; 
+    }
 }
 
-// Remove the top element from the priority queue
-int remove_top(priority_queue *q) {
-  if (is_empty(q)) {
-    printf("Error: cannot remove item from empty queue!\n");
-    return -1;
-  }
+// remove the element at the front of the queue
+void dequeue() {
+    if (queue_is_empty()) {
+        printf("Error: queue is empty!\n"); 
+        return; 
+    }
 
-  int top = q->data[0];
+    node* n = head; 
+    head = head->next; 
+    n->next = NULL ; 
+    free(n); 
+}
 
-  // Shift all elements down
-  int i;
-  for (i = 1; i < q->size; i++) {
-    q->data[i-1] = q->data[i];
-  }
-  q->size--;
+// print the contents of the queue
+void queue_print() {
+    if (queue_is_empty()) {
+        printf("Error: queue is empty!\n"); 
+        return; 
+    }
 
-  return top;
+    node* n = head; 
+    printf("Queue:"); 
+    while (n) {
+        printf(" %d", n->value); 
+        n = n->next; 
+    }
+    puts("");
 }
 
 int main() {
-  priority_queue q;
-  init(&q);
+    // add some elements to the queue
+    enqueue(7);
+    enqueue(1);
+    enqueue(9);
+    enqueue(3);
+    enqueue(2);
+    enqueue(1);
+    enqueue(8);
+    enqueue(0);
 
-  // Insert some elements into the queue
-  insert(&q, 5);
-  insert(&q, 3);
-  insert(&q, 9);
-  insert(&q, 1);
+    // print the contents of the queue
+    queue_print(); 
 
-  // Remove the top element from the queue
-  printf("%d\n", remove_top(&q));  // should print 1
+    // dequeue the head of the current queue
+    dequeue(1);
+    dequeue();
+    dequeue();
+    dequeue();
 
-  return 0;
+    // print the contents of the queue
+    queue_print(); 
 }

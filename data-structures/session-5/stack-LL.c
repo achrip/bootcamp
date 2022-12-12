@@ -58,7 +58,7 @@ void stack_print(stack* s) {
 
 int main() {
     stack* s = stack_new();
-
+    
     // push some elements onto the stack
     push(s, 1);
     push(s, 2);
