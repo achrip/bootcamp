@@ -6,7 +6,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#define max_size 99
+#define max_size 999
 
 // Main Fucntionals
 void menu();
@@ -26,9 +26,9 @@ typedef struct dish{
     int quantity;
     struct dish* next;
     struct dish* prev;
-} Dish;
+} Dish, Table;
 
-Dish* table[max_size];
+Table* table[max_size];
 Dish* head = NULL;
 Dish* tail = NULL; 
 
@@ -42,7 +42,7 @@ unsigned int hash_function(const char* s);
 
 int main()
 {
-    menu();
+    while(1) menu();
 
     return 0;
 }
@@ -61,7 +61,7 @@ void showInfo() {
     char dateTimeString[100];
     strftime(dateTimeString, 100, "%A %B %d %I:%M:%S %Y", localTime);
     printf("System: %s\n", info.sysname);
-    printf("The current date and time is: %s\n", dateTimeString);
+    printf("%s\n", dateTimeString);
 }
 
 Dish* dish_add(const char *name, int price, int qty) {
@@ -77,19 +77,19 @@ Dish* dish_insert(const char *name, int price, int qty) {
     Dish* new = dish_add(name, price, qty);
 
     if (!head) head = tail = new;
-    else if (head->price < price) {
+    else if (head->quantity <= qty) {
         new->next = head;
         head->prev = new; 
         head = new;
     }
-    else if (tail->price > price) {
+    else if (tail->quantity >= qty) {
         tail->next = new;
         new->prev = tail;
         tail = new;
     }
     else {
         Dish* curr = head;
-        while (curr->next && curr->next->price > price) curr = curr->next;
+        while (curr->next->quantity >= qty) curr = curr->next;
         new->next = curr->next;
         new->prev = curr; 
         curr->next->prev = new; 
@@ -111,23 +111,46 @@ void dish_print() {
     int count = 1;
     while (d) {
         printf("%-5d %-15s %-10d Rp%-10d\n", count, d->name,
-                d->quantity, d->quantity);
+                d->quantity, d->price);
         ++count;
         d = d->next;
     }
 
 }
 
-void dish_remove(const char* name) {
-    Dish* current = head; 
+int dish_remove(const char* name) {
+    if (strcmp(head->name, name) == 0) {
+        Dish* toRemove = head; 
+        head = head->next;
+        head->prev = NULL;  
+        toRemove->next = NULL; 
+        free(toRemove);
+        return 0; 
+    }
+    else if (strcmp(tail->name, name) == 0) {
+        Dish* toRemove = tail; 
+        tail = tail->prev; 
+        tail->next = NULL; 
+        toRemove->prev = NULL; 
+        free(toRemove);
+        return 0; 
+    }
+    else {
+        Dish* current = head; 
 
-    while (current->name != name) current = current->next;
-    current->next->prev = current->prev; 
-    current->prev->next = current->next; 
-    current->next = NULL; 
-    current->prev = NULL; 
-    free(current); 
+        while (strcmp(current->name, name) != 0) {
+            if (current == tail) return 1; 
+            current = current->next;
+        } 
+        current->next->prev = current->prev; 
+        current->prev->next = current->next; 
+        current->next = NULL; 
+        current->prev = NULL; 
+        free(current); 
+        return 0; 
+    }
 }
+
 unsigned int hash_function(const char* s) {
     unsigned int hash = 5381; 
     int c;
@@ -141,12 +164,13 @@ unsigned int hash_function(const char* s) {
 void customer_add(const char* name, Dish* menu) {
     int index = hash_function(name); 
 
-    if(!table[index]) table[index] = menu; 
-    else {
-        Dish* current = table[index]; 
-        while (current->next) current = current->next;
-        current->next = menu;
-        menu->prev = current;  
+    if(!table[index]) {
+        table[index] = menu;
+        return; 
+    }
+
+    while(table[index++]) {
+
     }
 }
 
@@ -154,6 +178,7 @@ void customer_add(const char* name, Dish* menu) {
 /*                      Initialization of Main Functionals                      */
 void menu() {
     int choose;
+    system("clear"); 
     showInfo();
     printf("1. Add Dish\n2. Remove Dish\n3. Add Customer\n4. Search Customer\n");
     printf("5. View Warteg\n6. Order\n7. Payment\n8. Exit Warteg\n>> ");
@@ -196,7 +221,7 @@ void addDish() {
 
     do {
         printf("Insert the name of the dish [Lowercase letters]: ");
-        scanf("%s", name);
+        scanf("%[^\n]", name);
         getchar();
         
         flag = 0; 
@@ -228,28 +253,26 @@ void addDish() {
 
     /*add the new dish to the linked list*/
     dish_insert(name, price, qty);
-
+    
     // done
-    printf("The dish has been added!\n");
-    printf("Press enter to continue...\n");
+    puts("The dish has been added!");
+    printf("Press enter to continue...");
     getchar();
 }
 
 void removeDish() {
-    printf("\tBude's Menu\n=====================================\n");
+    puts("\t\tBude's Menu\n==========================================");
     printf("%-5s %-15s %-10s %-10s\n", "No.", "Name", "Quantity", "Price");
     dish_print();
-    printf("=====================================\n");
+    puts("==========================================\n");
     printf("Insert dish's name to be deleted: ");
     char name[255]; 
     scanf("%s", name);
     getchar();
 
     // search and delete said food
-    dish_remove(name); 
-
-    // done
-    printf("The dish has been removed!\n");
+    if (dish_remove(name) == 0) puts("The dish has been removed!");
+    else printf("There's no dish named %s!\n", name); 
     printf("Press enter to continue..."); 
     getchar();   
 }
@@ -259,7 +282,7 @@ void addCust() {
 
     do {
         printf("Insert the customer's name [Without space]: ");
-        scanf("%d", name); 
+        scanf("%s", name); 
 
         flag = 0; 
         for (int i = 0; i < strlen(name); i++) {
@@ -270,11 +293,24 @@ void addCust() {
         }
     } while (flag); 
 
-    // store new customer in a form of data. could be table index != NULL or maybe an array?
-    printf("Customer has been added\n"); 
+    // 
+    Dish* template = dish_add("default", -1, -1);
+    customer_add(name, template);  
+    puts("Customer has been added"); 
     printf("Press enter to continue..."); 
+    getchar(); 
 }
-void searchCust() {}
+void searchCust() {
+    char name[255]; 
+    printf("Insert the customer's name to be searched: ");
+    scanf("%s", name); 
+    getchar(); 
+    
+    // if (customer_search(name) == 0) puts("idk what to do here");
+    // else puts("%s is not present.\n", name); 
+    printf("Press enter to continue..."); 
+    getchar(); 
+}
 void view() {}
 void order() {}
 void payment() {}
