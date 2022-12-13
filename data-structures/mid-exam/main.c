@@ -94,7 +94,7 @@ int dish_is_empty() {
 
 void dish_print() {
     if (dish_is_empty()) {
-        printf("Error: There's no dish available!");
+        printf("Error: There's no dish available!\n");
         return;
     }
 
@@ -186,14 +186,14 @@ void addDish() {
     dish_insert(name, price, qty);
 
     // done
-    printf("The dish has been added!\n", 
-            "Press enter to continue...\n");
+    printf("The dish has been added!\n");
+    printf("Press enter to continue...\n");
     getchar();
 }
 
 void removeDish() {
-    printf("\tBude's Menu\n=====================================\n",
-						"%-5s %-15s %-10s %-10s\n", "No.", "Name", "Quantity", "Price");
+    printf("\tBude's Menu\n=====================================\n");
+    printf("%-5s %-15s %-10s %-10s\n", "No.", "Name", "Quantity", "Price");
     dish_print();
     printf("=====================================\n",
             "Insert dish's name to be deleted: ");
@@ -203,8 +203,8 @@ void removeDish() {
 
     // search and delete said food
 
-    printf("The dish has been removed!\n", 
-            "Press enter to continue..."); 
+    printf("The dish has been removed!\n");
+    printf("Press enter to continue..."); 
     getchar();   
 }
 void addCust() {}
