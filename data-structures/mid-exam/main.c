@@ -6,6 +6,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#define max_size 99
+
 // Main Fucntionals
 void menu();
 void addDish();
@@ -23,10 +25,12 @@ typedef struct dish{
     int price;
     int quantity;
     struct dish* next;
+    struct dish* prev;
 } Dish;
 
+Dish* table[max_size];
 Dish* head = NULL;
-Dish* tail = NULL;
+Dish* tail = NULL; 
 
 // Other Functionals
 void showInfo();
@@ -34,8 +38,7 @@ Dish* dish_add(const char *name, int price, int qty);
 Dish* dish_insert(const char *name, int price, int qty);
 void dish_print();
 int dish_is_empty();
-
-
+unsigned int hash_function(const char* s); 
 
 int main()
 {
@@ -44,6 +47,7 @@ int main()
     return 0;
 }
 
+/*                  Initialization of Other Functionals                     */
 void showInfo() {
     struct utsname info;
     time_t currentTime;
@@ -66,6 +70,7 @@ Dish* dish_add(const char *name, int price, int qty) {
     new->price = price;
     new->quantity = qty;
     new->next = NULL;
+    new->prev = NULL;
 }
 
 Dish* dish_insert(const char *name, int price, int qty) {
@@ -73,17 +78,21 @@ Dish* dish_insert(const char *name, int price, int qty) {
 
     if (!head) head = tail = new;
     else if (head->price < price) {
-        new->next = head->next;
+        new->next = head;
+        head->prev = new; 
         head = new;
     }
     else if (tail->price > price) {
         tail->next = new;
+        new->prev = tail;
         tail = new;
     }
     else {
         Dish* curr = head;
         while (curr->next && curr->next->price > price) curr = curr->next;
         new->next = curr->next;
+        new->prev = curr; 
+        curr->next->prev = new; 
         curr->next = new;
     }
 }
@@ -108,6 +117,41 @@ void dish_print() {
     }
 
 }
+
+void dish_remove(const char* name) {
+    Dish* current = head; 
+
+    while (current->name != name) current = current->next;
+    current->next->prev = current->prev; 
+    current->prev->next = current->next; 
+    current->next = NULL; 
+    current->prev = NULL; 
+    free(current); 
+}
+unsigned int hash_function(const char* s) {
+    unsigned int hash = 5381; 
+    int c;
+
+    // TODO: use XOR version if permitted
+    while (c = *s++) hash = ((hash << 5) + hash) + c;  
+
+    return hash % max_size;    
+}
+
+void customer_add(const char* name, Dish* menu) {
+    int index = hash_function(name); 
+
+    if(!table[index]) table[index] = menu; 
+    else {
+        Dish* current = table[index]; 
+        while (current->next) current = current->next;
+        current->next = menu;
+        menu->prev = current;  
+    }
+}
+
+
+/*                      Initialization of Main Functionals                      */
 void menu() {
     int choose;
     showInfo();
@@ -195,19 +239,41 @@ void removeDish() {
     printf("\tBude's Menu\n=====================================\n");
     printf("%-5s %-15s %-10s %-10s\n", "No.", "Name", "Quantity", "Price");
     dish_print();
-    printf("=====================================\n",
-            "Insert dish's name to be deleted: ");
+    printf("=====================================\n");
+    printf("Insert dish's name to be deleted: ");
     char name[255]; 
     scanf("%s", name);
     getchar();
 
     // search and delete said food
+    dish_remove(name); 
 
+    // done
     printf("The dish has been removed!\n");
     printf("Press enter to continue..."); 
     getchar();   
 }
-void addCust() {}
+void addCust() {
+    char name[255]; 
+    int flag; 
+
+    do {
+        printf("Insert the customer's name [Without space]: ");
+        scanf("%d", name); 
+
+        flag = 0; 
+        for (int i = 0; i < strlen(name); i++) {
+            if(name[i] == ' ') {
+                flag = 1; 
+                break; 
+            }
+        }
+    } while (flag); 
+
+    // store new customer in a form of data. could be table index != NULL or maybe an array?
+    printf("Customer has been added\n"); 
+    printf("Press enter to continue..."); 
+}
 void searchCust() {}
 void view() {}
 void order() {}
