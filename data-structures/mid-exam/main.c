@@ -30,9 +30,13 @@ typedef struct dish{
 
 typedef struct customer{ 
     char name[255]; 
+
+    // linked list customer
     struct customer* next; 
     struct customer* prev; 
-    struct dish* order; 
+
+    // customer has order and it can be expanded into a linked list
+    struct dish* orderList; 
 } Cust; 
 
 Cust* table[max_size];
@@ -42,8 +46,9 @@ Dish* tail = NULL;
 // Other Functionals
 void showInfo();
 Cust* customer_add(const char* name); 
-void customer_insert(const char* name, Dish* order);
+void customer_insert(const char* name);
 int customer_search(const char* name);
+void customer_print();
 Dish* dish_add(const char *name, int price, int qty);
 void dish_insert(const char *name, int price, int qty);
 void dish_print();
@@ -175,24 +180,23 @@ Cust* customer_add(const char* name) {
     Cust* new = (Cust*) malloc(sizeof(Cust)); 
 
     strcpy(new->name, name); 
-    new->next = NULL; 
-    new->order = NULL; 
+    new->next = NULL;
+    new->prev = NULL;  
+    new->orderList = NULL; 
 
     return new; 
 }
 
-void customer_insert(const char* name, Dish* menu) {
+void customer_insert(const char* name) {
     Cust* new = customer_add(name); 
 
     unsigned int index = hash_function(name); 
-
     if (!table[index]) table[index] = new;
     else {
         Cust* p = table[index]; 
-
+        
         while(p->next) p = p->next; 
         new->next = p->next; 
-        p->next->prev = new; 
         p->next = new; 
         new->prev = p; 
     }
@@ -206,25 +210,40 @@ int customer_search(const char* name) {
         Cust* p = table[index]; 
 
         while (p->next) {
-            if (strcmp(p->name, name)) return 0; 
+            if (strcmp(p->name, name) == 0) return 0; 
             p = p->next; 
         }
     } 
+    return -1; 
 }
 
-// void customer_print() {
-//     for (int i = 0; i < max_size; i++) {
-//         if (!table[i]) continue; 
+void customer_print() {
+    for (int i = 0; i < max_size; i++) {
+        if (!table[i]) continue; 
 
-//         Cust* p = table[i]; 
-//         printf("%s", p->name); 
+        printf("%d.", i); 
+        for(Cust* p = table[i]; p != NULL; p = p->next){
+            printf("%s", p->name); 
+            if (p->next) printf("-->"); 
+        }
+        printf("\n"); 
+    }
+}
 
-//         while (p->next) { 
-//             p = p->next; 
-//             printf("-->")
-//         }
-//     }
-// }
+void customer_order(const char *name, int qty, const char* customer) {
+    Dish* order = dish_add(name, NULL, qty); 
+    
+    unsigned int index = hash_function(customer); 
+
+    Cust* c = table[index]; 
+    if(!c->orderList) c->orderList = order; 
+    else { 
+        Dish* p = c->orderList; 
+        while (p->next) p = p->next; 
+        p->next = order; 
+        order->prev = p; 
+    } 
+}
 
 
 /*                      Initialization of Main Functionals                      */
@@ -336,6 +355,7 @@ void addCust() {
     do {
         printf("Insert the customer's name [Without space]: ");
         scanf("%s", name); 
+        getchar(); 
 
         flag = 0; 
         for (int i = 0; i < strlen(name); i++) {
@@ -347,7 +367,7 @@ void addCust() {
     } while (flag); 
 
     // 
-    customer_add(name);  
+    customer_insert(name);  
     puts("Customer has been added"); 
     printf("Press enter to continue..."); 
     getchar(); 
@@ -359,14 +379,41 @@ void searchCust() {
     scanf("%s", name); 
     getchar(); 
     
-    // if (customer_search(name) == 0) puts("idk what to do here");
-    // else puts("%s is not present.\n", name); 
+    if (customer_search(name) == 0) printf("%s is present.\n", name);
+    else printf("%s is not present.\n", name); 
     printf("Press enter to continue..."); 
     getchar(); 
 }
 
-void view() {}
-void order() {}
+void view() {
+    puts("Customer's List"); 
+    customer_print(); 
+    printf("Press enter to continue..."); 
+    getchar(); 
+}
+void order() {
+    char cust[255], name[255];  
+    int dishes, qty; 
+
+    printf("Insert the customer's name: "); 
+    scanf("%s", cust); 
+    getchar(); 
+
+    printf("Insert the amount of dish: "); 
+    scanf("%d", &dishes); 
+    getchar(); 
+
+    for (int i = 0; i < dishes; i++) {
+        printf("[%d] Insert the dish's name and quantity: "); 
+        scanf("%[^x]s %d", name, &qty);
+        getchar();  
+
+        customer_order(name, qty, cust); 
+    }
+    puts("Order success!"); 
+    printf("Press enter to continue..."); 
+    getchar(); 
+}
 void payment() {}
 void bye() {
     puts("Please expand your terminal to full screen!"); 
@@ -375,11 +422,11 @@ void bye() {
     system("clear"); 
 
     FILE *splash = fopen("./splash-screen.txt", "r"); 
-    char s[1000];
+    char c;
     while (!feof(splash)) {
-        fscanf(splash, "%[^\n]\n", s); 
-        printf("%s\n", s); 
-    }
+        c = getc(splash); 
+        printf("%c", c); 
+    }; 
     fclose(splash); 
     exit(0);
 }
