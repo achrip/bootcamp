@@ -26,16 +26,26 @@ typedef struct dish{
     int quantity;
     struct dish* next;
     struct dish* prev;
-} Dish, Table;
+} Dish;
 
-Table* table[max_size];
+typedef struct customer{ 
+    char name[255]; 
+    struct customer* next; 
+    struct customer* prev; 
+    struct dish* order; 
+} Cust; 
+
+Cust* table[max_size];
 Dish* head = NULL;
 Dish* tail = NULL; 
 
 // Other Functionals
 void showInfo();
+Cust* customer_add(const char* name); 
+void customer_insert(const char* name, Dish* order);
+int customer_search(const char* name);
 Dish* dish_add(const char *name, int price, int qty);
-Dish* dish_insert(const char *name, int price, int qty);
+void dish_insert(const char *name, int price, int qty);
 void dish_print();
 int dish_is_empty();
 unsigned int hash_function(const char* s); 
@@ -73,7 +83,7 @@ Dish* dish_add(const char *name, int price, int qty) {
     new->prev = NULL;
 }
 
-Dish* dish_insert(const char *name, int price, int qty) {
+void dish_insert(const char *name, int price, int qty) {
     Dish* new = dish_add(name, price, qty);
 
     if (!head) head = tail = new;
@@ -161,18 +171,60 @@ unsigned int hash_function(const char* s) {
     return hash % max_size;    
 }
 
-void customer_add(const char* name, Dish* menu) {
-    int index = hash_function(name); 
+Cust* customer_add(const char* name) {
+    Cust* new = (Cust*) malloc(sizeof(Cust)); 
 
-    if(!table[index]) {
-        table[index] = menu;
-        return; 
-    }
+    strcpy(new->name, name); 
+    new->next = NULL; 
+    new->order = NULL; 
 
-    while(table[index++]) {
+    return new; 
+}
 
+void customer_insert(const char* name, Dish* menu) {
+    Cust* new = customer_add(name); 
+
+    unsigned int index = hash_function(name); 
+
+    if (!table[index]) table[index] = new;
+    else {
+        Cust* p = table[index]; 
+
+        while(p->next) p = p->next; 
+        new->next = p->next; 
+        p->next->prev = new; 
+        p->next = new; 
+        new->prev = p; 
     }
 }
+
+int customer_search(const char* name) {
+    unsigned int index = hash_function(name); 
+
+    if (!table[index]) return -1; 
+    else { 
+        Cust* p = table[index]; 
+
+        while (p->next) {
+            if (strcmp(p->name, name)) return 0; 
+            p = p->next; 
+        }
+    } 
+}
+
+// void customer_print() {
+//     for (int i = 0; i < max_size; i++) {
+//         if (!table[i]) continue; 
+
+//         Cust* p = table[i]; 
+//         printf("%s", p->name); 
+
+//         while (p->next) { 
+//             p = p->next; 
+//             printf("-->")
+//         }
+//     }
+// }
 
 
 /*                      Initialization of Main Functionals                      */
@@ -276,6 +328,7 @@ void removeDish() {
     printf("Press enter to continue..."); 
     getchar();   
 }
+
 void addCust() {
     char name[255]; 
     int flag; 
@@ -294,12 +347,12 @@ void addCust() {
     } while (flag); 
 
     // 
-    Dish* template = dish_add("default", -1, -1);
-    customer_add(name, template);  
+    customer_add(name);  
     puts("Customer has been added"); 
     printf("Press enter to continue..."); 
     getchar(); 
 }
+
 void searchCust() {
     char name[255]; 
     printf("Insert the customer's name to be searched: ");
@@ -311,9 +364,22 @@ void searchCust() {
     printf("Press enter to continue..."); 
     getchar(); 
 }
+
 void view() {}
 void order() {}
 void payment() {}
 void bye() {
+    puts("Please expand your terminal to full screen!"); 
+    printf("Press enter to continue..."); 
+    getchar(); 
+    system("clear"); 
+
+    FILE *splash = fopen("./splash-screen.txt", "r"); 
+    char s[1000];
+    while (!feof(splash)) {
+        fscanf(splash, "%[^\n]\n", s); 
+        printf("%s\n", s); 
+    }
+    fclose(splash); 
     exit(0);
 }
